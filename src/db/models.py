@@ -24,6 +24,9 @@ class User(Base):
     email: orm.Mapped[su.EmailType] = orm.mapped_column(
         su.EmailType, primary_key=True
     )
+    is_verified: orm.Mapped[bool] = orm.mapped_column(
+        sqlalchemy.Boolean, default=False
+    )
     first_name: orm.Mapped[str] = orm.mapped_column(sqlalchemy.String(30))
     last_name: orm.Mapped[str] = orm.mapped_column(sqlalchemy.String(30))
     bio: orm.Mapped[str] = orm.mapped_column(sqlalchemy.String(100))
