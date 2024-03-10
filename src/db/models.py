@@ -20,10 +20,16 @@ class User(Base):
 
     __tablename__ = "users"
     GENDERS = (("Male", "Male"), ("Female", "Female"), ("Other", "Other"))
-    ROLES = (("admin", "Admin"), ("user", "User"), ("moderator", "Moderator"))
-    email: orm.Mapped[su.EmailType] = orm.mapped_column(
-        su.EmailType, primary_key=True
+    ROLES = (
+        ("admin", "Admin"),
+        ("user", "User"),
+        ("moderator", "Moderator"),
+        ("deleted", "Deleted"),
     )
+    user_id: orm.Mapped[sqlalchemy.UUID] = orm.mapped_column(
+        sqlalchemy.UUID(as_uuid=True), primary_key=True
+    )
+    email: orm.Mapped[su.EmailType] = orm.mapped_column(su.EmailType)
     is_verified: orm.Mapped[bool] = orm.mapped_column(
         sqlalchemy.Boolean, default=False
     )
@@ -38,6 +44,9 @@ class User(Base):
     password_hash: orm.Mapped[str] = orm.mapped_column(sqlalchemy.String(100))
     credibility_score: orm.Mapped[int] = orm.mapped_column(sqlalchemy.Integer)
     feedbacks: orm.Mapped[Optional[List["Feedback"]]] = orm.relationship()
+    verification_code: orm.Mapped[Optional["UserVerification"]] = (
+        orm.relationship()
+    )
 
 
 class SocialMediaAccount(Base):
@@ -47,8 +56,8 @@ class SocialMediaAccount(Base):
     social_media_account_id: orm.Mapped[sqlalchemy.UUID] = orm.mapped_column(
         sqlalchemy.UUID(as_uuid=True), primary_key=True
     )
-    user_email: orm.Mapped[str] = orm.mapped_column(
-        sqlalchemy.ForeignKey("users.email")
+    user_id: orm.Mapped[sqlalchemy.UUID] = orm.mapped_column(
+        sqlalchemy.ForeignKey("users.user_id")
     )
     media_type_name: orm.Mapped[str] = orm.mapped_column(
         sqlalchemy.ForeignKey("media_types.title")
@@ -85,8 +94,8 @@ class Feedback(Base):
         sqlalchemy.UUID(as_uuid=True), primary_key=True
     )
     project_name: orm.Mapped[str] = orm.mapped_column(sqlalchemy.String(30))
-    to_user: orm.Mapped[su.EmailType] = orm.mapped_column(
-        sqlalchemy.ForeignKey("users.email")
+    to_user: orm.Mapped[sqlalchemy.UUID] = orm.mapped_column(
+        sqlalchemy.ForeignKey("users.user_id")
     )
     comments: orm.Mapped[Optional[List["Comment"]]] = orm.relationship()
     scores: orm.Mapped[Optional[List["Score"]]] = orm.relationship()
@@ -99,8 +108,8 @@ class Comment(Base):
     comment_id: orm.Mapped[sqlalchemy.UUID] = orm.mapped_column(
         sqlalchemy.UUID(as_uuid=True), primary_key=True
     )
-    from_user: orm.Mapped[su.EmailType] = orm.mapped_column(
-        sqlalchemy.ForeignKey("users.email")
+    from_user: orm.Mapped[sqlalchemy.UUID] = orm.mapped_column(
+        sqlalchemy.ForeignKey("users.user_id")
     )
     feedback_id: orm.Mapped[sqlalchemy.UUID] = orm.mapped_column(
         sqlalchemy.ForeignKey("feedbacks.feedback_id")
@@ -119,9 +128,23 @@ class Score(Base):
     feedback_id: orm.Mapped[sqlalchemy.UUID] = orm.mapped_column(
         sqlalchemy.ForeignKey("feedbacks.feedback_id")
     )
-    from_user: orm.Mapped[su.EmailType] = orm.mapped_column(
-        sqlalchemy.ForeignKey("users.email")
+    from_user: orm.Mapped[sqlalchemy.UUID] = orm.mapped_column(
+        sqlalchemy.ForeignKey("users.user_id")
     )
     metrica_name: orm.Mapped[str] = orm.mapped_column(sqlalchemy.String(20))
     score: orm.Mapped[int] = orm.mapped_column(sqlalchemy.Integer)
+    timestamp: orm.Mapped[int] = orm.mapped_column(sqlalchemy.Integer)
+
+
+class UserVerification(Base):
+    """Store code for account verification"""
+
+    __tablename__ = "user_verifications"
+    verification_id: orm.Mapped[sqlalchemy.UUID] = orm.mapped_column(
+        sqlalchemy.UUID(as_uuid=True), primary_key=True
+    )
+    user_id: orm.Mapped[sqlalchemy.UUID] = orm.mapped_column(
+        sqlalchemy.ForeignKey("users.user_id")
+    )
+    verification_code: orm.Mapped[int] = orm.mapped_column(sqlalchemy.Integer)
     timestamp: orm.Mapped[int] = orm.mapped_column(sqlalchemy.Integer)
